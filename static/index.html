@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Steam 清单获取工具</title>
+  <style>
+    :root {
+      --primary: #1b2838;
+      --accent: #66c0f4;
+      --bg: #0b1622;
+      --card: #132236;
+      --text: #e5e5e5;
+      --muted: #9db2c6;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Inter", "Noto Sans SC", system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    header {
+      background: linear-gradient(120deg, var(--primary), #0e1a27);
+      padding: 24px;
+      text-align: center;
+      border-bottom: 1px solid #0f2438;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+      letter-spacing: 1px;
+    }
+    p {
+      margin: 4px 0;
+      color: var(--muted);
+    }
+    main {
+      max-width: 980px;
+      margin: -36px auto 40px;
+      padding: 0 16px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid #0f2438;
+      border-radius: 14px;
+      padding: 20px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 14px;
+    }
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid #1f3a55;
+      background: #0c1928;
+      color: var(--text);
+    }
+    input[type="text"]:focus {
+      outline: 2px solid var(--accent);
+      border-color: var(--accent);
+    }
+    button {
+      border: none;
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-weight: 700;
+      cursor: pointer;
+      color: #08121c;
+      background: var(--accent);
+      transition: transform 0.15s ease, box-shadow 0.2s ease;
+      box-shadow: 0 8px 22px rgba(102, 192, 244, 0.35);
+    }
+    button.secondary {
+      background: #203344;
+      color: var(--text);
+      box-shadow: none;
+      border: 1px solid #2b4762;
+    }
+    button:active {
+      transform: translateY(1px);
+    }
+    .actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+    .section-title {
+      font-size: 18px;
+      margin: 20px 0 10px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      background: rgba(102, 192, 244, 0.1);
+      color: var(--accent);
+      border: 1px solid rgba(102, 192, 244, 0.35);
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .status {
+      background: #0e1a27;
+      border: 1px solid #123251;
+      border-radius: 10px;
+      padding: 12px;
+      min-height: 48px;
+      color: var(--muted);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .results {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      border: 1px solid #0f2438;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .results li {
+      padding: 12px;
+      border-bottom: 1px solid #0f2438;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    .results li:hover {
+      background: #0e1a27;
+    }
+    .results li:last-child {
+      border-bottom: none;
+    }
+    textarea {
+      width: 100%;
+      min-height: 180px;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid #1f3a55;
+      background: #0c1928;
+      color: var(--text);
+      font-family: "JetBrains Mono", "SFMono-Regular", monospace;
+      resize: vertical;
+    }
+    .depot-item {
+      border: 1px solid #0f2438;
+      background: #0e1a27;
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 8px;
+    }
+    .muted { color: var(--muted); }
+    .pill {
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 999px;
+      padding: 4px 10px;
+      margin: 2px;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Steam 清单获取工具</h1>
+    <p>输入 AppID 或游戏名称，在线生成 SteamTools 所需的 Lua 解锁脚本。</p>
+  </header>
+
+  <main>
+    <section class="card">
+      <div class="grid">
+        <div>
+          <label for="query">AppID / 游戏名</label>
+          <input id="query" type="text" placeholder="例如：570 或 Dota 2" />
+        </div>
+        <div>
+          <label for="preferred-name">自定义显示名称（可选）</label>
+          <input id="preferred-name" type="text" placeholder="用于输出的游戏名称" />
+        </div>
+      </div>
+      <div class="actions">
+        <button id="search-btn" type="button">🔍 搜索游戏</button>
+        <button id="fetch-btn" type="button">🚀 获取清单并生成 Lua</button>
+      </div>
+      <p class="muted" style="margin-top:10px;">提示：先搜索确认 AppID，更精确地生成清单。</p>
+    </section>
+
+    <section class="card" style="margin-top:16px;">
+      <div class="section-title">搜索结果 <span class="badge" id="results-count">0 项</span></div>
+      <ul class="results" id="results-list"></ul>
+      <div class="status" id="search-status">等待操作…</div>
+    </section>
+
+    <section class="card" style="margin-top:16px;">
+      <div class="section-title">生成状态</div>
+      <div class="status" id="fetch-status">等待操作…</div>
+      <div class="section-title">Lua 解锁脚本</div>
+      <textarea id="lua-output" placeholder="生成后将在此展示脚本" readonly></textarea>
+      <div class="section-title">Depot & Manifest 详情</div>
+      <div id="depot-list"></div>
+    </section>
+  </main>
+
+  <script>
+    const searchBtn = document.getElementById('search-btn');
+    const fetchBtn = document.getElementById('fetch-btn');
+    const queryInput = document.getElementById('query');
+    const preferredNameInput = document.getElementById('preferred-name');
+    const resultsList = document.getElementById('results-list');
+    const resultsCount = document.getElementById('results-count');
+    const searchStatus = document.getElementById('search-status');
+    const fetchStatus = document.getElementById('fetch-status');
+    const luaOutput = document.getElementById('lua-output');
+    const depotList = document.getElementById('depot-list');
+
+    let selectedAppId = '';
+
+    function setStatus(element, message, isError = false) {
+      element.textContent = message;
+      element.style.color = isError ? '#ff7b7b' : 'var(--muted)';
+    }
+
+    function renderResults(results) {
+      resultsList.innerHTML = '';
+      resultsCount.textContent = `${results.length} 项`;
+
+      if (results.length === 0) {
+        setStatus(searchStatus, '未找到匹配的游戏', true);
+        return;
+      }
+
+      results.forEach((game) => {
+        const li = document.createElement('li');
+        const displayName = game.schinese_name || game.name || game.appid;
+        li.innerHTML = `<strong>${displayName}</strong><br/><span class="muted">AppID: ${game.appid}</span>`;
+        li.addEventListener('click', () => {
+          selectedAppId = game.appid;
+          queryInput.value = game.appid;
+          setStatus(searchStatus, `已选择 ${displayName} (AppID: ${game.appid})`);
+        });
+        resultsList.appendChild(li);
+      });
+
+      setStatus(searchStatus, '点击条目可快速填入 AppID');
+    }
+
+    async function searchGames() {
+      const query = queryInput.value.trim();
+      if (!query) {
+        setStatus(searchStatus, '请输入 AppID 或游戏名', true);
+        return;
+      }
+      setStatus(searchStatus, '正在搜索…');
+
+      try {
+        const resp = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+        const data = await resp.json();
+        if (!resp.ok) {
+          throw new Error(data.error || '搜索失败');
+        }
+        renderResults(data.results || []);
+      } catch (err) {
+        setStatus(searchStatus, err.message, true);
+      }
+    }
+
+    function renderDepots(depots = []) {
+      depotList.innerHTML = '';
+      depots.forEach((depot) => {
+        const block = document.createElement('div');
+        block.className = 'depot-item';
+        const manifestPills = depot.manifest_ids.length
+          ? depot.manifest_ids.map((id) => `<span class="pill">${id}</span>`).join('')
+          : '<span class="muted">未找到 manifest 文件</span>';
+
+        block.innerHTML = `
+          <div><strong>Depot ${depot.depot_id}</strong></div>
+          <div class="muted">Key: ${depot.decryption_key}</div>
+          <div style="margin-top:6px;">Manifest: ${manifestPills}</div>
+        `;
+        depotList.appendChild(block);
+      });
+    }
+
+    async function fetchManifest() {
+      const query = queryInput.value.trim();
+      const gameName = preferredNameInput.value.trim();
+      if (!query) {
+        setStatus(fetchStatus, '请输入 AppID 或游戏名', true);
+        return;
+      }
+      setStatus(fetchStatus, '正在下载清单并生成 Lua…');
+      luaOutput.value = '';
+      depotList.innerHTML = '';
+
+      try {
+        const resp = await fetch('/api/fetch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ appid: query, gameName }),
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+          throw new Error(data.error || '清单获取失败');
+        }
+
+        luaOutput.value = data.lua_script || '';
+        renderDepots(data.depots || []);
+        setStatus(fetchStatus, `生成成功：${data.game_name || data.appid}（保存目录：${data.save_dir}）`);
+      } catch (err) {
+        setStatus(fetchStatus, err.message, true);
+      }
+    }
+
+    searchBtn.addEventListener('click', searchGames);
+    fetchBtn.addEventListener('click', fetchManifest);
+    queryInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') searchGames();
+    });
+  </script>
+</body>
+</html>
